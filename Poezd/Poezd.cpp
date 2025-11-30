@@ -1,269 +1,189 @@
 ﻿#include <iostream>
-#include <windows.h>
-#include <string>
 #include <iomanip>
-#include <ctime> 
+#include <Windows.h>
 
 
-void initializeTrain(int train[18][36], bool randomFill);
-void printTrain(const int train[18][36]);
-bool bookSeat(int train[18][36], int wagon, int seat);
-bool freeSeat(int train[18][36], int wagon, int seat);
-int freeSeatsInWagon(const int train[18][36], int wagon);
-int totalFreeSeats(const int train[18][36]);
-void menu();
+const int NUM_WAGONS = 18;
+const int SEATS_PER_WAGON = 36;
 
 
-int train[18][36];
+int seatsArrangement[NUM_WAGONS][SEATS_PER_WAGON];
 
-int main()
+
+void fillRandomly() 
 {
-    SetConsoleCP(1251);
-    SetConsoleOutputCP(1251);
-    srand(static_cast<unsigned int>(time(NULL)));
-    menu();
-    return 0;
-}
-
-
-void initializeTrain(int train[18][36], bool randomFill)
-{
-    for (int i = 0; i < 18; ++i) 
+    std::srand(std::time(nullptr));
+    for (int i = 0; i < NUM_WAGONS; ++i) 
     {
-        for (int j = 0; j < 36; ++j) 
+        for (int j = 0; j < SEATS_PER_WAGON; ++j) 
         {
-            if (randomFill) 
-            {
-                train[i][j] = rand() % 2;
-            }
-            else
-            {
-                train[i][j] = 0;
-            }
+            seatsArrangement[i][j] = std::rand() % 2; 
         }
     }
 }
 
 
-void printTrain(const int train[18][36])
+void clearSeats() 
 {
-    system("cls");
-    std::cout << "Обзор вагонов и мест:\n\n";
-    for (int i = 0; i < 18; ++i)
+    for (int i = 0; i < NUM_WAGONS; ++i) 
     {
-        std::cout << "Вагон " << std::setw(2) << i + 1 << ": ";
-        for (int j = 0; j < 36; ++j) {
-            std::cout << train[i][j] << " ";
+        for (int j = 0; j < SEATS_PER_WAGON; ++j) 
+        {
+            seatsArrangement[i][j] = 0;
+        }
+    }
+}
+
+
+void displayTrain() 
+{
+    std::cout << "Раскладка мест по вагонам:\n";
+    for (int i = 0; i < NUM_WAGONS; ++i)
+    {
+        std::cout << "Вагон " << i + 1 << ": ";
+        for (int j = 0; j < SEATS_PER_WAGON; ++j) 
+        {
+            std::cout << seatsArrangement[i][j] << " ";
         }
         std::cout << "\n";
     }
 }
 
-
-bool bookSeat(int train[18][36], int wagon, int seat) 
+void toggleSeat() 
 {
-    if (wagon < 0 || wagon >= 18 || seat < 0 || seat >= 36)
-        return false;
-    if (train[wagon][seat] == 0) 
+    int wagonIdx, seatIdx;
+    std::cout << "Введите номер вагона (1-" << NUM_WAGONS << "): ";
+    std::cin >> wagonIdx;
+    std::cout << "Введите номер места (1-" << SEATS_PER_WAGON << "): ";
+    std::cin >> seatIdx;
+
+    
+    if (wagonIdx < 1 || wagonIdx > NUM_WAGONS || seatIdx < 1 || seatIdx > SEATS_PER_WAGON) 
     {
-        train[wagon][seat] = 1;
-        return true;
+        std::cout << "Некорректный ввод.\n";
+        return;
     }
-    return false;
+
+    int vIdx = wagonIdx - 1;
+    int sIdx = seatIdx - 1;
+    if (seatsArrangement[vIdx][sIdx] == 0) 
+    {
+        seatsArrangement[vIdx][sIdx] = 1;
+        std::cout << "Место занято.\n";
+    }
+    else 
+    {
+        seatsArrangement[vIdx][sIdx] = 0;
+        std::cout << "Место освобождено.\n";
+    }
 }
 
 
-bool freeSeat(int train[18][36], int wagon, int seat) 
+int countFreeSeatsInWagon(int wagonNumber) 
 {
-    if (wagon < 0 || wagon >= 18 || seat < 0 || seat >= 36)
-        return false;
-    if (train[wagon][seat] == 1) 
+    int freeCount = 0;
+    for (int j = 0; j < SEATS_PER_WAGON; ++j) 
     {
-        train[wagon][seat] = 0;
-        return true;
+        if (seatsArrangement[wagonNumber][j] == 0) 
+        {
+            ++freeCount;
+        }
     }
-    return false;
+    return freeCount;
 }
 
 
-int freeSeatsInWagon(const int train[18][36], int wagon) 
-{
-    if (wagon < 0 || wagon >= 18)
-        return -1;
-    int count = 0;
-    for (int j = 0; j < 36; ++j) 
-    {
-        if (train[wagon][j] == 0)
-            ++count;
-    }
-    return count;
-}
-
-
-int totalFreeSeats(const int train[18][36]) 
+int totalFreeSeats() 
 {
     int total = 0;
-    for (int i = 0; i < 18; ++i) 
+    for (int i = 0; i < NUM_WAGONS; ++i) 
     {
-        for (int j = 0; j < 36; ++j)
-        {
-            if (train[i][j] == 0)
-                ++total;
-        }
+        total += countFreeSeatsInWagon(i);
     }
     return total;
 }
 
-
-void menu() 
+int main() 
 {
-    bool initialized = false;
-
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    srand(time(NULL));
+   
     while (true) 
     {
-        std::cout << "\nМеню:\n";
-        std::cout << "1. Инициализация массива\n";
-        std::cout << "2. Вывод таблицы\n";
-        std::cout << "3. Забронировать место\n";
-        std::cout << "4. Освободить место\n";
-        std::cout << "5. Количество свободных мест в вагоне\n";
-        std::cout << "6. Общее количество свободных\n";
-        std::cout << "0. Выход\n";
-        std::cout << "Выберите: ";
-        int choice;
-        std::cin >> choice;
+        int mode;
+        std::cout << "Выберите режим заполнения:\n"
+            << "1 - случайная расстановка\n"
+            << "2 - очистка (все места свободны)\n"
+            << "Ваш выбор: ";
+        std::cin >> mode;
 
-        if (choice == 0) 
+        if (mode == 1) 
         {
-            std::cout << "Выход...\n";
-            Sleep(1000);
-            system("cls");
-            break;
+            fillRandomly();
         }
-        else if (choice == 1) 
+        else if (mode == 2) 
         {
-            std::cout << "Выберите:\n1. Рандомное заполнение\n2. Всё пусто\nВыбор: ";
-            int ch;
-            std::cin >> ch;
-            if (ch == 1) 
+
+            clearSeats();
+        }
+        else 
+        {
+            std::cout << "Некорректный ввод. Попробуйте снова.\n";
+            continue;
+        }
+
+        while (true) 
+        {
+            int choice;
+            std::cout << "\nМеню:\n"
+                << "1 - Показать все места\n"
+                << "2 - Забронировать/освободить место\n"
+                << "3 - Посчитать свободные места в вагоне\n"
+                << "4 - Общее количество свободных мест\n"
+                << "5 - Выход в главное меню\n"
+                << "Выбор: ";
+            std::cin >> choice;
+
+            if (choice == 1) 
             {
-                initializeTrain(train, true);
+                displayTrain();
+            }
+            else if (choice == 2) 
+            {
+                toggleSeat();
+            }
+            else if (choice == 3) 
+            {
+                int wagonNumber;
+                std::cout << "Введите номер вагона (1-" << NUM_WAGONS << "): ";
+                std::cin >> wagonNumber;
+                if (wagonNumber < 1 || wagonNumber > NUM_WAGONS) 
+                {
+
+
+                    std::cout << "Некорректный номер вагона.\n";
+                }
+                else 
+                {
+                    int freeSeats = countFreeSeatsInWagon(wagonNumber - 1);
+                    std::cout << "Свободных мест в вагоне " << wagonNumber << ": " << freeSeats << "\n";
+                }
+            }
+            else if (choice == 4) 
+            {
+                std::cout << "Общее количество свободных мест: " << totalFreeSeats() << "\n";
+            }
+            else if (choice == 5) 
+            {
+                std::cout << "Возврат в главное меню.\n";
+                break;
             }
             else 
             {
-                initializeTrain(train, false);
-            }
-            initialized = true;
-        }
-        else if (choice == 2) 
-        {
-            if (!initialized) 
-            {
-                std::cout << "Сначала инициализируйте массив!\n";
-                Sleep(1000);
-                system("cls");
-            }
-            else 
-            {
-                printTrain(train);
+                std::cout << "Некорректный выбор. Попробуйте снова.\n";
             }
         }
-        else if (choice == 3)
-        {
-            if (!initialized) 
-            {
-                std::cout << "Сначала инициализация!\n";
-                Sleep(1000);
-                system("cls");
-                continue;
-            }
-            int w, s;
-            std::cout << "Введите номер вагона (1-18): ";
-            std::cin >> w;
-            std::cout << "Введите номер места (1-36): ";
-            std::cin >> s;
-            if (bookSeat(train, w - 1, s - 1))
-            {
-                std::cout << "Место забронировано.\n";
-                Sleep(1000);
-                system("cls");
-            }
-            else
-            {
-                std::cout << "Невозможно забронировать. Проверьте правильность номера или занятость.\n";
-                Sleep(1000);
-                system("cls");
-            }
-        }
-        else if (choice == 4) 
-        {
-            if (!initialized) 
-            {
-                std::cout << "Сначала инициализация!\n";
-                Sleep(1000);
-                system("cls");
-                continue;
-            }
-            int w, s;
-            std::cout << "Введите номер вагона (1-18): ";
-            std::cin >> w;
-            std::cout << "Введите номер места (1-36): ";
-            std::cin >> s;
-            if (freeSeat(train, w - 1, s - 1))
-            {
-                std::cout << "Место освобождено.\n";
-                Sleep(1000);
-                system("cls");
-            }
-            else
-            {
-                std::cout << "Невозможно освободить. Проверьте правильность введенных данных.\n";
-                Sleep(1000);
-                system("cls");
-            }
-        }
-        else if (choice == 5) 
-        {
-            if (!initialized) 
-            {
-                std::cout << "Сначала инициализация!\n";
-                Sleep(1000);
-                system("cls");
-                continue;
-            }
-            int w;
-            std::cout << "Введите номер вагона (1-18): ";
-            std::cin >> w;
-            int freeCount = freeSeatsInWagon(train, w - 1);
-            if (freeCount >= 0)
-            {
-                std::cout << "В вагоне " << w << " свободно мест: " << freeCount << "\n";
-            }
-            else
-            {
-                std::cout << "Некорректный номер вагона.\n";
-                Sleep(1000);
-                system("cls");
-            }
-        }
-        else if (choice == 6) 
-        {
-            if (!initialized) 
-            {
-                std::cout << "Сначала инициализация!\n";
-                Sleep(1000);
-                system("cls");
-                continue;
-            }
-            int total = totalFreeSeats(train);
-            std::cout << "Общее количество свободных мест: " << total << "\n";
-        }
-        else
-        {
-            std::cout << "Некорректный выбор.\n";
-            Sleep(1000);
-            system("cls");
-        }
-   
     }
+    return 0;
 }
